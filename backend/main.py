@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("backend/firebase-config.json")  # Use the correct path to your config
+cred = credentials.Certificate("firebase-config.json")  # Use the correct path to your config
 firebase_admin.initialize_app(cred)
 
 # Initialize Firestore DB
