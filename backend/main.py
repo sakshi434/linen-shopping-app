@@ -1,69 +1,46 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from firebase_admin import credentials, firestore
+import os
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
-
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate("firebase-config.json")  # Use the correct path to your config
+# Initialize Firebase using Application Default Credentials (from GOOGLE_APPLICATION_CREDENTIALS)
+cred = credentials.ApplicationDefault()
 firebase_admin.initialize_app(cred)
 
-# Initialize Firestore DB
+# Firestore client
 db = firestore.client()
-users_ref = db.collection('users')
 
-# Route to register a new user
-@app.route('/register', methods=['POST'])
-def register():
+# Flask app setup
+app = Flask(__name__)
+CORS(app)
+
+# Example route to add user data
+@app.route('/add_user', methods=['POST'])
+def add_user():
     try:
-        data = request.get_json()
-        email = data['email']
-        password = data['password']
-        name = data.get('name', '')  # Optional name field
-
-        # Create user in Firebase Authentication
-        user_record = auth.create_user(email=email, password=password, display_name=name)
-
-        # Store user info in Firestore
-        users_ref.document(user_record.uid).set({
-            'email': email,
-            'name': name,
-            'uid': user_record.uid
-        })
-
-        return jsonify({'message': 'User registered successfully!', 'uid': user_record.uid}), 201
-
+        data = request.json
+        user_id = data.get('uid')
+        if not user_id:
+            return jsonify({'error': 'User ID (uid) is required'}), 400
+        db.collection('users').document(user_id).set(data)
+        return jsonify({'success': True, 'message': 'User added'}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
-# Route to verify an ID token (from frontend login)
-@app.route('/verify-token', methods=['POST'])
-def verify_token():
+# Example route to get user data
+@app.route('/get_user/<user_id>', methods=['GET'])
+def get_user(user_id):
     try:
-        data = request.get_json()
-        id_token = data['idToken']
-
-        # Verify ID token
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
-        user_doc = users_ref.document(uid).get()
-
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
         if user_doc.exists:
-            user_data = user_doc.to_dict()
-            return jsonify({'message': 'Token verified', 'user': user_data}), 200
+            return jsonify(user_doc.to_dict()), 200
         else:
             return jsonify({'error': 'User not found'}), 404
-
     except Exception as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'error': str(e)}), 500
 
-# Basic home route
-@app.route('/')
-def home():
-    return "Firebase-Backed Flask API is running."
-
+# Entry point
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
