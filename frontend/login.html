@@ -1,35 +1,112 @@
-<!-- login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - LINEN</title>
-  <link rel="stylesheet" href="../frontend/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LINEN - Login</title>
+  <link rel="stylesheet" href="login.css" />
 </head>
 <body>
-  <header>
-    <h1><a href="index.html">LINEN</a></h1>
-    <nav>
-      <a href="shop.html">Shop</a>
-      <a href="cart.html">Cart</a>
-      <a href="login.html">Login</a>
-    </nav>
-  </header>
-  <main class="auth-forms">
-    <h2>Login</h2>
-    <input type="email" id="login-email" placeholder="Email">
-    <input type="password" id="login-password" placeholder="Password">
-    <button onclick="login()">Login</button>
+  <div class="login-container">
+    <h2 id="form-title">Login to LINEN</h2>
+    <form id="auth-form">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <div id="confirm-password-group" style="display: none;">
+        <input type="password" id="confirm-password" placeholder="Confirm Password" />
+      </div>
+      <button type="submit" id="submit-btn">Login</button>
+    </form>
+    <p id="toggle-msg">
+      Don't have an account? <a href="#" id="toggle-link">Register</a>
+    </p>
+  </div>
 
-    <h2>Register</h2>
-    <input type="email" id="register-email" placeholder="Email">
-    <input type="password" id="register-password" placeholder="Password">
-    <button onclick="register()">Register</button>
-  </main>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="../firebase/firebase-config.js"></script>
-  <script src="../frontend/script.js"></script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Firebase config (Replace with your actual Firebase project config)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB6orezruYcHbOJqgKvhbPk4z8rws78Qy8",
+      authDomain: "cc-lab-6-9d038.firebaseapp.com",
+      projectId: "cc-lab-6-9d038",
+      appId: "1:1078182586191:web:dbdd859189c2edb34d873a",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const formTitle = document.getElementById("form-title");
+    const authForm = document.getElementById("auth-form");
+    const toggleMsg = document.getElementById("toggle-msg");
+    const submitBtn = document.getElementById("submit-btn");
+    const confirmPasswordGroup = document.getElementById("confirm-password-group");
+
+    let isLogin = true;
+
+    const updateFormState = () => {
+      if (isLogin) {
+        formTitle.textContent = "Login to LINEN";
+        submitBtn.textContent = "Login";
+        toggleMsg.innerHTML = `Don't have an account? <a href="#" id="toggle-link">Register</a>`;
+        confirmPasswordGroup.style.display = "none";
+      } else {
+        formTitle.textContent = "Register with LINEN";
+        submitBtn.textContent = "Register";
+        toggleMsg.innerHTML = `Already have an account? <a href="#" id="toggle-link">Login</a>`;
+        confirmPasswordGroup.style.display = "block";
+      }
+      document.getElementById("toggle-link").addEventListener("click", (e) => {
+        e.preventDefault();
+        isLogin = !isLogin;
+        updateFormState();
+      });
+    };
+
+    updateFormState(); // Initial call
+
+    authForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirm-password").value;
+
+      if (!email || !password) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      if (!isLogin && password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      if (isLogin) {
+        signInWithEmailAndPassword(auth, email, password)
+          .then(() => {
+            alert(`Logged in as ${email}`);
+            window.location.href = "index.html";
+          })
+          .catch((error) => {
+            alert("Login Error: " + error.message);
+          });
+      } else {
+        createUserWithEmailAndPassword(auth, email, password)
+          .then(() => {
+            alert(`Registered as ${email}`);
+            window.location.href = "index.html";
+          })
+          .catch((error) => {
+            alert("Registration Error: " + error.message);
+          });
+      }
+    });
+  </script>
 </body>
 </html>
