@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: linen-backend
+    env: python
+    buildCommand: ""
+    startCommand: python main.py
+    workingDir: backend
